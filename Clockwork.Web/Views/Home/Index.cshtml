@@ -1,0 +1,160 @@
+﻿@model IEnumerable<System.TimeZoneInfo>
+
+
+<script>
+    function init()
+    {
+        var model = @Html.Raw(Json.Encode(Model));
+        var dropdown = document.getElementById("timezone");
+
+        for (var i = 0; i < model.length; ++i)
+        {
+            var newOption = document.createElement("option");
+  
+            newOption.innerHTML = model[i].DisplayName;
+            newOption.value = model[i].Id;
+            dropdown.appendChild(newOption);
+
+            console.log(model[i]);
+        }
+
+        GetAllDbEntries();
+    }
+
+    function GetCurrentTime() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var jsonObject = JSON.parse(this.responseText);
+
+                var utcDateTime = jsonObject.utcTime;
+                document.getElementById("output1").innerHTML = "UTC Time: " + utcDateTime;
+                
+                
+                //-------------------------------------------------------------
+                // json object format
+                //[{"currentTimeQueryId":1,"time":"2018-08-12T23:22:07.580951","clientIp":"::1","utcTime":"2018-08-13T03:22:07.580951"}
+            }
+        };
+        xhttp.open("GET", "http://localhost:50031/api/currenttime", true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send();
+    }
+
+    function GetAllDbEntries() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                document.getElementById("tableheader").hidden = false;
+
+                var table = document.getElementById("databaseOutput");
+                var fc = table.firstChild;
+
+                while (fc) {
+                    table.removeChild(fc);
+                    fc = table.firstChild;
+                }
+
+
+                varArray = new Array();
+
+                varArray = JSON.parse(this.responseText);
+
+                var homeRow = document.createElement("tr");
+
+                var header = document.createElement("th");
+                header.innerHTML = "ID";
+                homeRow.appendChild(header);
+
+                var header = document.createElement("th");
+                header.innerHTML = "Selected Time";
+                homeRow.appendChild(header);
+
+                var header = document.createElement("th");
+                header.innerHTML = "Time Zone";
+                homeRow.appendChild(header);
+
+                var header = document.createElement("th");
+                header.innerHTML = "Local IP";
+                homeRow.appendChild(header);
+
+                var header = document.createElement("th");
+                header.innerHTML = "UTC Time";
+                homeRow.appendChild(header);
+
+                table.appendChild(homeRow);
+
+                for (var i = 0; i < varArray.length; ++i) {
+                    var newRow = document.createElement("tr");
+
+                    var id = varArray[i].currentTimeQueryId;
+                    var td = document.createElement("td");
+                    td.innerHTML = id;
+                    newRow.appendChild(td);
+
+                    var id = varArray[i].time;
+                    var td = document.createElement("td");
+                    td.innerHTML = id;
+                    newRow.appendChild(td);
+
+                    var id = varArray[i].timeZone;
+                    var td = document.createElement("td");
+                    td.innerHTML = id;
+                    newRow.appendChild(td);
+
+                    var id = varArray[i].clientIp;
+                    var td = document.createElement("td");
+                    td.innerHTML = id;
+                    newRow.appendChild(td);
+
+                    var id = varArray[i].utcTime;
+                    var td = document.createElement("td");
+                    td.innerHTML = id;
+                    newRow.appendChild(td);
+
+                    table.appendChild(newRow)
+                }
+            }
+        };
+        xhttp.open("GET", "http://localhost:50031/api/currenttime/getall", true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send();
+    }
+
+    function GetConvertedTime() {
+        var selectedTimeZone = document.getElementById("timezone").value;
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var jsonObject = JSON.parse(this.responseText);
+                document.getElementById("output2").innerHTML = "Selected Time: " + jsonObject.time;
+            }
+        };
+        xhttp.open("GET", "http://localhost:50031/api/currenttime/get/" + selectedTimeZone, true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send();
+
+        GetAllDbEntries();
+    }
+</script>
+
+<div>
+    <h2>AWH Clockwork Project @ViewData["Version"] on @ViewData["Runtime"]!</h2>
+
+    <select id="timezone"></select>
+
+    <button type="submit" onclick="GetCurrentTime(); GetConvertedTime();">Get the time</button>
+    <button type="submit" onclick="GetAllDbEntries();">Display Database</button>
+
+    <p id="output1"></p>
+    <p id="output2"></p>
+</div>
+
+<h2 id="tableheader" hidden="hidden">Database Entries</h2>
+<table id="databaseOutput">
+    
+</table>
+
+<body onload="init();">
+</body>
